@@ -64,14 +64,17 @@
 
     .image-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        grid-template-rows: repeat(auto-fill, minmax(200px, 300px));
+		grid-template-columns: repeat(4, 1fr);
         grid-gap: 1rem;
+		/* Fill order: top - bottom left - right*/
+		grid-auto-flow: dense;
     }
 
     .grid-ele {
         width: 100%;
         height: 100%;
-        object-fit: contain;
+        object-fit: cover;
     }
 
     .image-container {
