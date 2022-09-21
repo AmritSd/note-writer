@@ -1,35 +1,31 @@
 <script>
     // @ts-nocheck
-	import { onMount } from "svelte";
+    import { createEventDispatcher } from 'svelte';
+
+    const dispatch = createEventDispatcher();
+
+    function deleteImg() {
+        dispatch('delete', {
+            text: 'kill me!'
+        });
+    }
     export let file = "";
-    // export let boundingDim = {height: 0, width: 0};
-    let img = "";
-
-    // let color = "rgb(0, 0, 0);";
-
-    // const updateHeight = (boundingDim) => {
-    //     if(img != "") {
-    //         return img.getBoundingClientRect().top;
-    //     }
-    // }
-    // onMount(() => {
-    //     updateHeight(boundingDim);
-    // });
-
-    // const heightToColor = (height) => {
-    //     return "rgb(0, " + (300 - height / 4 ).toString() + ", 0);";
-    // }
-
-    // $: height = updateHeight(boundingDim);
-    // $: color = heightToColor(height);
-
-
     let display = "none";
-
 </script>
-<div on:mouseover={() => {display = "block"; console.log("Block")}} on:mouseleave={() => {display = "none"; console.log("none")}} on:focus={() => {}} >
-    <img bind:this={img} src={URL.createObjectURL(file)} alt={file.name} />
-    <button style="--display : {display}" class="delete">X</button>
+<div on:mouseover={() => {display = "block";}} on:mouseleave={() => {display = "none";}} on:focus={() => {}} >
+    <!-- File is image then display image otherwise display video-->
+    {#if file.type.includes("image")}
+        <img src={URL.createObjectURL(file)} alt={file.name}/>
+    {:else}
+        <!-- Display thumbnail-->
+
+        <video controls preload="metadata">
+            <source src={URL.createObjectURL(file) + "#t=0.1"} type={file.type}/>
+            <track kind="captions"/>
+        </video>
+    {/if}
+
+    <button style="--display : {display}" class="delete" on:click={() => {(display !== "none") && deleteImg()}}>X</button>
 </div>
 
 <style>
@@ -37,6 +33,17 @@
         position: relative;
     }
     img {
+        display : block;
+        height : 100%;  
+        max-height: 20rem;
+        width: auto;
+        margin: 0.5rem;
+        border-width: 0.1rem;
+        border-style: solid;
+        border-color: black;
+    }
+
+    video {
         display : block;
         height : 100%;  
         max-height: 20rem;

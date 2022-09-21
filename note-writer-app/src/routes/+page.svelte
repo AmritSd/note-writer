@@ -1,48 +1,55 @@
 <script>
 	// @ts-nocheck
-	let files = [];
-	let allFiles = [];
 	import Editor from '@tinymce/tinymce-svelte';
+	import ImageGrid from './imageGrid/+page.svelte';
+	import Title from './title/+page.svelte';
 
+	let titleText = "";
+	let gridStyle = "flex: 1;";
+
+	// Set default font to Segoe UI
 	const conf = {
-		toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | code',
-		menubar: false
+		toolbar: 'undo redo | fontsizeselect | outdent indent |  fontsize | h1 h2 h3 h4 h5 h6',
+		fontsize_formats: '8pt 10pt 12pt 14pt 18pt 24pt 36pt',
+		menubar: false,
+		plugins: 'autoresize',	
+		min_height: 500,
+		resize : 'both',
+		body_id : 'editor',
+		content_style: 'body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; line-height: 1; letter-spacing: 0.1em; }',
+		placeholder : "Write your note here...",
 	};
 
-    const onImgClick = (e) => {
-        // Change the css property for class 'img' to 'display: none'
-        
-    }
-
-    $: allFiles = Array.from(allFiles).concat(Array.from(files))
+	// Write to file using 
 
 </script>
 
-<!--Add a browse file button to add images to the page-->
-<input type="file" accept="image/*" bind:files multiple="multiple" />
-
 <!-- Make a flex box with two side by side divs-->
+<Title bind:titleText={titleText}/>
 <div class="flex">
 	<!-- Left side div -->
-	<div class="flex-1">
-		<!-- Add a div to show the images -->
-		<div class="image-grid">
-			{#each allFiles as file}
-                <div class = "image-container">
-                    <img class = "grid-ele" src={URL.createObjectURL(file)} alt={file.name} on:click={onImgClick} />
-                    <button on:click={() => {allFiles = allFiles.filter((f) => f !== file); files = [];}}> Delete </button>
-                </div>
-			{/each}
-		</div>
+	<div class="flex-1" style={gridStyle}>
+		<ImageGrid bind:gridStyle={gridStyle}/>
 	</div>
 
 	<!-- Right side div -->
-	<div class="flex-1">
-		<Editor {conf} />
+	<div class="flex-2">
+		<Editor {conf}/>
 	</div>
 </div>
 
 <style>
+	:global(body) {
+		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+		letter-spacing: 0.1em;
+		font-size : 20px;
+	}
+
+	:global(.tox-tbtn) {
+		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+		letter-spacing: 0.1em !important;
+
+	}
 	:global(.tox-notification) {
 		display: none !important;
 	}
@@ -53,38 +60,21 @@
 	:global(.tox-tinymce) {
 		border: none !important;
 	}
+
+	:global(.tox-editor-header) {
+		/* border: 1px solid #ccc !important; */
+		box-shadow: none !important;
+	}
 	.flex {
 		display: flex;
 		/* span the whole page */
-		height: 100vh;
-	}
-	.flex-1 {
-		flex: 1;
+		height: 90vh;
 	}
 
-    .image-grid {
-        display: grid;
-        grid-template-rows: repeat(auto-fill, minmax(200px, 300px));
-		grid-template-columns: repeat(4, 1fr);
-        grid-gap: 1rem;
-		/* Fill order: top - bottom left - right*/
-		grid-auto-flow: dense;
-    }
 
-    .grid-ele {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
 
-    .image-container {
-        position: relative;
-    }
+	.flex-2 {
+		flex: 4;
+	}
 
-    .image-container button {
-        position: absolute;
-        top: 0;
-        right: 0;
-        display: none;
-    } 
 </style>
