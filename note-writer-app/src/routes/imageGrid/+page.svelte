@@ -17,20 +17,20 @@
     export let gridStyle = "flex: 1;";
     let iconSize = 35;
 
-    const uploadFiles = (filesWithId) => {
-        let formData = new FormData();
-        filesWithId.forEach((file) => {
-            formData.append("files", file.file);
-        });
-        fetch("/imageGrid/upload", {
-            method: "POST",
-            body: formData,
-        })
-            .then((res) => res.json())
-            .then((data) => {
-                console.log(data);
-            });
-    };
+    // const uploadFiles = (filesWithId) => {
+    //     let formData = new FormData();
+    //     filesWithId.forEach((file) => {
+    //         formData.append("files", file.file);
+    //     });
+    //     fetch("/imageGrid/upload", {
+    //         method: "POST",
+    //         body: formData,
+    //     })
+    //         .then((res) => res.json())
+    //         .then((data) => {
+    //             console.log(data);
+    //         });
+    // };
     
     $: allFiles = Array.from(allFiles).concat(Array.from(filesWithId));
     $: if(files !== []) {
@@ -54,7 +54,7 @@
         gridStyle = "flex: 1;";
         iconSize = 35;
     }
-    $: uploadFiles(filesWithId);
+    // $: uploadFiles(filesWithId);
 </script>
 
 <div class="upload" style={uploadStyle}>
