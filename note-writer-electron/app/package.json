@@ -27,7 +27,8 @@
   "dependencies": {
     "@tinymce/tinymce-svelte": "^1.0.0",
     "electron-serve": "^1.1.0",
-    "svelte-icons-pack": "^2.0.0"
+    "svelte-icons-pack": "^2.0.0",
+    "sweetalert2": "^11.4.36"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^20.0.0",

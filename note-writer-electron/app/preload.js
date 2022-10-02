@@ -8,19 +8,11 @@ const {
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld(
     "api", {
-        send: (channel, data) => {
-            // whitelist channels
-            let validChannels = ["toMain"];
-            if (validChannels.includes(channel)) {
-                ipcRenderer.send(channel, data);
-            }
-        },
-        receive: (channel, func) => {
-            let validChannels = ["fromMain"];
-            if (validChannels.includes(channel)) {
-                // Deliberately strip event as it includes `sender` 
-                ipcRenderer.on(channel, (event, ...args) => func(...args));
-            }
-        }
+        openFile : () => ipcRenderer.invoke("open-file"),
+        showNotes : () => ipcRenderer.invoke("show-notes"),
+        openDir : (id) => ipcRenderer.invoke("open-dir", id),
+        saveDir : (id, messages) => ipcRenderer.invoke("save-dir", {id, messages}),
+        deleteFile : (id, file) => ipcRenderer.invoke("delete-file", {id, file}),
+        deleteDir : (id) => ipcRenderer.invoke("delete-dir", id)
     }
 );

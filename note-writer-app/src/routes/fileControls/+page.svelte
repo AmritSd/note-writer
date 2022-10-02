@@ -18,6 +18,8 @@ const openFile = async () => {
   return handle;
 };
 
+
+
 const textFromFile = async (file) => {
   // Create a new FileReader object
   const reader = new FileReader();
@@ -75,6 +77,7 @@ const saveExistingFile = async (fileHandle, text) => {
 
 Add buttons to open a file and save a File
 {text}
+<button on:click={ipcOpen}>Open File 2 </button>
 <button on:click={() => {openFile()}}>Open File</button>
 <button on:click={() => {saveFile("Holy shite")}}>Save File</button>
 <!-- Update file button -->

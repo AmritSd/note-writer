@@ -5,11 +5,20 @@
 	import Editor from '@tinymce/tinymce-svelte';
 	import ImageGrid from './imageGrid/+page.svelte';
 	import Title from './title/+page.svelte';
-	import { saveFile } from './+page.js';
+	import Icon from 'svelte-icons-pack/Icon.svelte';
 
+	import Swal from 'sweetalert2';
+	import FileEarmarkPlusFill from 'svelte-icons-pack/bs/BsFileEarmarkPlusFill';
+	import VscOpenPreview from "svelte-icons-pack/vsc/VscOpenPreview";
+	import VscSave from "svelte-icons-pack/vsc/VscSave";
+	import LeftArrow from "svelte-icons-pack/vsc/VscChevronLeft";
+	import RightArrow from "svelte-icons-pack/vsc/VscChevronRight";
 
 	let titleText = "";
+	let editorText = "";
 	let gridStyle = "flex: 1;";
+	// set id to a 10 char random string
+	let id = Math.random().toString(36).substring(2, 12);
 
 	// Set default font to Segoe UI
 	const conf = {
@@ -24,16 +33,126 @@
 		placeholder : "Write your note here...",
 	};
 
-	// Write to file using 
-	function save() {
-		saveFile(titleText, document.getElementById("editor").innerHTML);
+	// Refresh Id, clear title and editor text
+	function newNote() {
+		id = Math.random().toString(36).substring(2, 12);
+		titleText = "";
+		editorText = "";
+	}
+
+
+	async function openNote() {
+		// Use the window.api.showNotes to get an array of {Id: string, Title: string}
+		const notes = JSON.parse(await window.api.showNotes());
+
+		// Display the notes in a modal
+		const {value: noteId} = await Swal.fire({
+			title: 'Select a note',
+			input: 'select',
+			inputOptions: notes.map(note => note.Title),
+			inputPlaceholder: 'Select a note',
+			showCancelButton: true,
+			inputValidator: (value) => {
+				return new Promise((resolve) => {
+					if (value) {
+						resolve()
+					} else {
+						resolve('You need to select a note')
+					}
+				})
+			}
+		})
+
+		// Display the note titles in a modal and return note id
+		const {value: noteTitle} = await Swal.fire({
+			title: 'Select a note',
+			input: 'select',
+			inputOptions: notes.map(note => note.title),
+			inputPlaceholder: 'Select a note',
+			showCancelButton: true,
+			inputValidator: (value) => {
+				return new Promise((resolve) => {
+					if (value) {
+						resolve()
+					} else {
+						resolve('You need to select a note')
+					}
+				})
+			}
+		})
+		
+		// Display the notes in a modal table
+		
+
+		if (noteId) {
+			// Use the window.api.getNote to get the note with the selected id
+			const note = await window.api.openDir(noteId);
+			// Set the title and editor text to the note's title and content
+			titleText = note.title;
+			editorText = note.notes;
+			id = noteId;
+		}
+	}
+
+	// Write to file
+	async function saveNote() {
+		var data = {};
+		data.title = titleText;
+		data.notes = editorText;
+		// Write to file using window.api
+		let p = await window.api.saveDir(id, data);
+		console.log(p);
+
 	}
 </script>
 
 
+<!-- Arrow 1 will be placed to the left edge of the page in the center. It will be used to go to the previous note -->
+<button class="left-arrow" >
+	<Icon src={LeftArrow} size={25} className="icon" />
+</button>
+
+<!-- Arrow 2 will be placed to the right edge of the page in the center. It will be used to go to the next note -->
+<button class="right-arrow">
+	<Icon src={RightArrow} size={25} className="icon"/>
+</button>
+
+
+<!--
+	Make a flex box. On the left there will the title component.
+	On the right there will be a toolbar with 3 buttons
+	1. New
+	2. Open
+	3. Save
+
+	The buttons should be icons using the svelte-icons library
+	They shouldn't have a border or background
+
+-->
+<div style="display: flex; flex-direction: row; height: 100%; width: 100%;">
+	<!-- Title -->
+	<Title bind:titleText />
+
+	<!-- Toolbar -->
+	<div class="toolbar" style="display: flex; flex-direction: row; align-items: center; justify-content: center;">
+		<button on:click={newNote}>
+			<Icon src={FileEarmarkPlusFill} size={25} className="icon" />
+		</button>
+
+		<button on:click={openNote}>
+			<Icon src={VscOpenPreview} size={25} className="icon" />
+		</button>
+
+		<button on:click={saveNote}>
+			<Icon src={VscSave} size={25} className="icon" />
+		</button>
+
+		<!-- Display id right corner-->
+		<div id="id-div" style="position: absolute; bottom: 0; right: 0; margin: 10px; font-size: 10px;">{id}</div>
+	</div>
+</div>
 
 <!-- Make a flex box with two side by side divs-->
-<Title bind:titleText={titleText}/>
 <div class="flex">
 	<!-- Left side div -->
 	<div class="flex-1" style={gridStyle}>
@@ -42,7 +161,7 @@
 
 	<!-- Right side div -->
 	<div class="flex-2">
-		<Editor {conf}/>
+		<Editor bind:value={editorText} id="editor" {conf}/>
 	</div>
 </div>
 
@@ -73,16 +192,55 @@
 		/* border: 1px solid #ccc !important; */
 		box-shadow: none !important;
 	}
+
+	/* Add space between buttons in toolbar */
+	/* Buttons shouldn't have border or background */
+	.toolbar button {
+		border: none;
+		background: none;
+		cursor: pointer;
+	}
+	/* Make button image purple on hover */
+	.toolbar button:hover :global(.icon), .right-arrow:hover :global(.icon), .left-arrow:hover :global(.icon) {
+		fill: #6c63ff;
+	}
+
 	.flex {
 		display: flex;
 		/* span the whole page */
 		height: 90vh;
 	}
 
-
-
 	.flex-2 {
 		flex: 4;
+	}
+
+	.left-arrow {
+		/* style="position: absolute; left: 0; top: 50%; transform: translateY(-50%);" */
+		position: absolute;
+		left: 0;
+		top: 50%;
+		transform: translateY(-50%);
+		/* Remove border and background */
+		border: none;
+		background: none;
+	}
+
+
+	.right-arrow {
+		position: absolute;
+		right: 0;
+		top: 50%;
+		transform: translateY(-50%);
+		z-index: 1;
+		/* Remove border and background */
+		border: none;
+		background: none;
+	}
+
+	#id-div {
+		/* Flash when text changes */
+		animation: flash 1s;
 	}
 
 </style>

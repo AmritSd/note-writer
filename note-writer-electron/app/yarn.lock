@@ -2351,6 +2351,11 @@
   "resolved" "https://registry.npmjs.org/svelte/-/svelte-3.50.1.tgz"
   "version" "3.50.1"
 
+"sweetalert2@^11.4.36":
+  "integrity" "sha512-9c9Cj7wn+1ekv2sKcBrgsTbx8malW+11NInepn+0wWeejXFQUeJUxt27ASpo1GdS4CfeHfN9UXBDvU519y0ygw=="
+  "resolved" "https://registry.npmjs.org/sweetalert2/-/sweetalert2-11.4.36.tgz"
+  "version" "11.4.36"
+
 "temp-file@^3.4.0":
   "integrity" "sha512-C5tjlC/HCtVUOi3KWVokd4vHVViOmGjtLwIh4MuzPo/nMYTV/p1urt3RnMz2IWXDdKEGJH3k5+KPxtqRsUYGtg=="
   "resolved" "https://registry.npmjs.org/temp-file/-/temp-file-3.4.0.tgz"
