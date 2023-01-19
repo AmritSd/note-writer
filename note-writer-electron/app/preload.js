@@ -8,7 +8,7 @@ const {
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld(
     "api", {
-        openFile : () => ipcRenderer.invoke("open-file"),
+        openFile : (id) => ipcRenderer.invoke("open-file", id),
         showNotes : () => ipcRenderer.invoke("show-notes"),
         openDir : (id) => ipcRenderer.invoke("open-dir", id),
         saveDir : (id, messages) => ipcRenderer.invoke("save-dir", {id, messages}),

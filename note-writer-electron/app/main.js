@@ -5,6 +5,7 @@ const fs = require('fs');
 const serve = require('electron-serve');
 const loadURL = serve({ directory: 'public' });
 
+const finalDir = 'src/media';
 
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -25,6 +26,7 @@ function createWindow() {
             preload: path.join(__dirname, 'preload.js'),
             // enableRemoteModule: true,
             // contextIsolation: false
+            webSecurity: false
         },
         icon: path.join(__dirname, 'public/favicon.png'),
         show: false
@@ -84,7 +86,7 @@ app.on('activate', function () {
 // function will open file (images and videos) and copy them over to the media folder (it will create one if it doesn't exist) and then send the path to the renderer process
 ipcMain.handle("open-file", async (event, arg) => {
     const result = await dialog.showOpenDialog(mainWindow, {
-        properties: ['openFile'],
+        properties: ['openFile', 'multiSelections'],
         filters: [
             { name: 'Images', extensions: ['jpg', 'png', 'gif'] },
             { name: 'Videos', extensions: ['mkv', 'avi', 'mp4'] },
@@ -93,30 +95,33 @@ ipcMain.handle("open-file", async (event, arg) => {
     });
 
     if (result.canceled) {
-        return;
+        return [];
     }
 
-    const filePath = result.filePaths[0];
-    const fileName = path.basename(filePath);
-    const mediaPath = path.join(__dirname, 'media/media');
-    const destinationPath = path.join(mediaPath, fileName);
+    // For everypath in result
+    // Copy the file to media folder
+    let destinationPaths = [];
+    for (const filePath of result.filePaths) {
+        const fileName = path.basename(filePath);
+        let mediaPath = path.join(__dirname, finalDir);
+        mediaPath = path.join(mediaPath, arg);
 
-    if (!fs.existsSync(mediaPath)) {
-        fs.mkdirSync(mediaPath);
+        const destinationPath = path.join(mediaPath, fileName);
+
+        if (!fs.existsSync(mediaPath)) {
+            fs.mkdirSync(mediaPath);
+        }
+
+        fs.copyFileSync(filePath, destinationPath);
+        destinationPaths.push(destinationPath);
     }
-
-    fs.copyFileSync(filePath, destinationPath);
-
-    console.log(destinationPath);
-    console.log(filePath);
-    console.log(mediaPath);
-    return destinationPath;
+    return destinationPaths;
 });
 
 // Function will show the notes available in the media folder
 // This can be done by reading the notes.json file in the media folder
 ipcMain.handle("show-notes", async (event, arg) => {
-    const mediaPath = path.join(__dirname, 'media');
+    const mediaPath = path.join(__dirname, finalDir);
     const notesPath = path.join(mediaPath, 'notes.json');
 
     if (!fs.existsSync(notesPath)) {
@@ -130,12 +135,12 @@ ipcMain.handle("show-notes", async (event, arg) => {
 // Function will open a dir with the media folder with given id
 // It read the messages.json file within the folder and return the content
 ipcMain.handle("open-dir", async (event, arg) => {
-    const mediaPath = path.join(__dirname, 'media');
+    const mediaPath = path.join(__dirname, finalDir);
     const dirPath = path.join(mediaPath, arg);
     const messagesPath = path.join(dirPath, 'messages.json');
 
     if (!fs.existsSync(messagesPath)) {
-        return;
+        return "empty";
     }
 
     const messages = fs.readFileSync(messagesPath, 'utf-8');
@@ -147,7 +152,7 @@ ipcMain.handle("open-dir", async (event, arg) => {
 // It will then create a messages.json file within the folder if it doesn't exist, and then write contents to the file
 // Upload the notes.json file in the media folder. Add the note id and title to array
 ipcMain.handle("save-dir", async (event, arg) => {
-    const mediaPath = path.join(__dirname, 'media');
+    const mediaPath = path.join(__dirname, finalDir);
 
     const notesPath = path.join(mediaPath, 'notes.json');
 
@@ -164,7 +169,7 @@ ipcMain.handle("save-dir", async (event, arg) => {
     } else {
         notesArray.forEach(note => {
             if (note.id === arg.id) {
-                note.title = arg.title;
+                note.title = arg.messages.title;
             }
         });
     }
@@ -183,7 +188,7 @@ ipcMain.handle("save-dir", async (event, arg) => {
 
 // Delete file from subfolder in mdia folder with given id
 ipcMain.handle("delete-file", async (event, arg) => {
-    const mediaPath = path.join(__dirname, 'media');
+    const mediaPath = path.join(__dirname, finalDir);
     const dirPath = path.join(mediaPath, arg.id);
     const filePath = path.join(dirPath, arg.file);
 
@@ -194,7 +199,7 @@ ipcMain.handle("delete-file", async (event, arg) => {
 
 // Delete folder from media folder with given id
 ipcMain.handle("delete-dir", async (event, arg) => {
-    const mediaPath = path.join(__dirname, 'media');
+    const mediaPath = path.join(__dirname, finalDir);
     const dirPath = path.join(mediaPath, arg);
 
     if (fs.existsSync(dirPath)) {

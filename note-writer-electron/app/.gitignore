@@ -23,3 +23,7 @@ private
 
 # Desktop Services Store on macOS
 .DS_Store
+
+
+src/media
+media

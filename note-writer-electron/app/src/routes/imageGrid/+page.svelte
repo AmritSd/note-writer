@@ -1,6 +1,5 @@
 <script>
     // @ts-nocheck
-	import { onMount } from 'svelte';
 
     import Imagy from './image.svelte';
     import Icon from 'svelte-icons-pack/Icon.svelte';
@@ -9,42 +8,34 @@
 
 	let files = [];
     let filesWithId = [];
-	let allFiles = [];
-    let numPics = 0;
     let inputs = "";
 
     let uploadStyle = "height : 50vh;";
     export let gridStyle = "flex: 1;";
-    let iconSize = 35;
+    export let editorId = "";
+    export let allFiles = [];
+    export let numPics = 0;
 
-    // const uploadFiles = (filesWithId) => {
-    //     let formData = new FormData();
-    //     filesWithId.forEach((file) => {
-    //         formData.append("files", file.file);
-    //     });
-    //     fetch("/imageGrid/upload", {
-    //         method: "POST",
-    //         body: formData,
-    //     })
-    //         .then((res) => res.json())
-    //         .then((data) => {
-    //             console.log(data);
-    //         });
-    // };
+    let iconSize = 35;
     
-    $: allFiles = Array.from(allFiles).concat(Array.from(filesWithId));
+
     $: if(files !== []) {
         filesWithId = Array.from(files).map((file) => {
             return {
-                file: file,
-                id: numPics++
+                path: file,
+                id: numPics++,
+                size: 18
             }
         });
         files = [];
         if(inputs) {
             inputs.value = "";
         }
+
+        allFiles = Array.from(allFiles).concat(Array.from(filesWithId));
+        filesWithId = [];
     }
+
     $: if(allFiles.length > 0) {
         uploadStyle = "height: 5vh;";
         gridStyle = "flex: 2;";
@@ -54,21 +45,23 @@
         gridStyle = "flex: 1;";
         iconSize = 35;
     }
+
+    $: console.log(allFiles);
+    $: console.log(files);
     // $: uploadFiles(filesWithId);
 </script>
 
 <div class="upload" style={uploadStyle}>
-    <label for="upload">
-        <Icon src={PlusCircleFill} size={iconSize} className="icon"/>
-        <!--Add a browse file button to add images to the page-->
-        <input type="file" accept="image/*, video/mp4,video/x-m4v,video/*" id="upload" style="display:none" bind:files multiple="multiple" bind:this={inputs}/>
-    </label> 
+    <button class="upload-button" on:click={async () => {files = await window.api.openFile(editorId);}}>
+        <Icon src={PlusCircleFill} size={iconSize} className="icon" />
+    </button>
+
 </div>
 
 
 <div class='grid'>
     {#each allFiles as file (file.id)}
-        <Imagy file={file.file} on:delete={() => {allFiles = allFiles.filter((f) => f !== file); files = []; filesWithId = [];}}/>
+        <Imagy url={file.path} bind:maxHeight={file.size} on:delete={() => {allFiles = allFiles.filter((f) => f !== file); files = []; filesWithId = [];}}/>
     {/each}
 </div>
 
@@ -78,11 +71,14 @@
     color: rgb(138, 137, 137);
 }
 
-/* center label vertically and horizontally*/
-label {
-    cursor: pointer;
-}
 
+
+button {
+    cursor: pointer;
+    background: none;
+    border: none;
+    outline: none;
+}
 .upload {
     /* center contents vertically and horizontally */
     display: flex;
@@ -94,6 +90,7 @@ label {
 .grid {
     display: flex;
     flex-wrap: wrap;
+    margin-left: 1rem;
 }
 
 </style>
