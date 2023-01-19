@@ -206,3 +206,26 @@ ipcMain.handle("delete-dir", async (event, arg) => {
         fs.rmdirSync(dirPath, { recursive: true });
     }
 });
+
+
+// Backup the media folder
+ipcMain.handle("backup", async (event, arg) => {
+    // Ask the user to select a folder
+    const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openDirectory']
+    });
+
+    if (result.canceled) {
+        return;
+    }
+
+    const mediaPath = path.join(__dirname, finalDir);
+    const backupPath = path.join(result.filePaths[0], 'media');
+
+    if (!fs.existsSync(backupPath)) {
+        fs.mkdirSync(backupPath);
+    }
+
+    // Copy the media folder to the selected folder recursively
+    fs.copySync(mediaPath, backupPath, { recursive: true });
+});

@@ -121,7 +121,15 @@
 			openNote(notes[index - 1].id);
 		}
 	}
+
+	async function backup() {
+		let p = await window.api.backup();
+		console.log(p);
+	}
+
 </script>
+
+<button on:click={backup}>Backup</button>
 
 <!-- Create a panel that overlay the right side of the screen -->
 <div class="panel" style={showMenu}>

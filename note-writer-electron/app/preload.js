@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld(
         openDir : (id) => ipcRenderer.invoke("open-dir", id),
         saveDir : (id, messages) => ipcRenderer.invoke("save-dir", {id, messages}),
         deleteFile : (id, file) => ipcRenderer.invoke("delete-file", {id, file}),
-        deleteDir : (id) => ipcRenderer.invoke("delete-dir", id)
+        deleteDir : (id) => ipcRenderer.invoke("delete-dir", id),
+        backup : () => ipcRenderer.invoke("backup"),
     }
 );
