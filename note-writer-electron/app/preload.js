@@ -15,5 +15,6 @@ contextBridge.exposeInMainWorld(
         deleteFile : (id, file) => ipcRenderer.invoke("delete-file", {id, file}),
         deleteDir : (id) => ipcRenderer.invoke("delete-dir", id),
         backup : () => ipcRenderer.invoke("backup"),
+        restore : () => ipcRenderer.invoke("restore")
     }
 );

@@ -1,7 +1,7 @@
 // Modules to control application life and create native browser window
 const { app, BrowserWindow, dialog , ipcMain} = require('electron');
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs-extra');
 const serve = require('electron-serve');
 const loadURL = serve({ directory: 'public' });
 
@@ -216,7 +216,8 @@ ipcMain.handle("backup", async (event, arg) => {
     });
 
     if (result.canceled) {
-        return;
+        // Return failure status to renderer process
+        return false;
     }
 
     const mediaPath = path.join(__dirname, finalDir);
@@ -227,5 +228,81 @@ ipcMain.handle("backup", async (event, arg) => {
     }
 
     // Copy the media folder to the selected folder recursively
-    fs.copySync(mediaPath, backupPath, { recursive: true });
+    try {
+        await fs.copy(mediaPath, backupPath);
+        // Sleep for 1 second to make sure the copy is complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return true;
+    } catch (err) {
+        return false;
+    }
+});
+
+// Import the media folder
+ipcMain.handle("restore", async (event, arg) => {
+    // Ask the user to select a folder
+    const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openDirectory']
+    });
+
+    if (result.canceled) {
+        // Return failure status to renderer process
+        return false;
+    }
+
+    const mediaPath = path.join(__dirname, finalDir);
+    const importPath = result.filePaths[0];
+
+    if (!fs.existsSync(importPath)) {
+        return false;
+    }
+
+    // We want to merge the two notes.json files
+    // So we need to read the notes.json file in the media folder and the notes.json file in the selected folder
+    // Then we need to merge the two arrays and remove duplicates
+    // Then we need to write the merged array to the notes.json file in the media folder
+
+    const mediaNotesPath = path.join(mediaPath, 'notes.json');
+    const importNotesPath = path.join(importPath, 'notes.json');
+
+    if (fs.existsSync(mediaNotesPath) && fs.existsSync(importNotesPath)) {
+
+        const mediaNotes = fs.readFileSync(mediaNotesPath, 'utf-8');
+        const importNotes = fs.readFileSync(importNotesPath, 'utf-8');
+
+        const mediaNotesArray = JSON.parse(mediaNotes);
+        const importNotesArray = JSON.parse(importNotes);
+
+        const mergedNotesArray = [...mediaNotesArray, ...importNotesArray];
+
+        // Each note has an id and a title
+        // We need to remove duplicates based on the id efficiently
+        let uniqueNotesArray = [];
+        let idMap = new Map();
+
+        for (let i = 0; i < mergedNotesArray.length; i++) {
+            const note = mergedNotesArray[i];
+
+            if (!idMap.has(note.id)) {
+                idMap.set(note.id, true);
+                uniqueNotesArray.push(note);
+            }
+        }
+
+        fs.writeFileSync(mediaNotesPath, JSON.stringify(uniqueNotesArray));
+    }
+
+
+    // Copy the folder/file to the media folder if it doesn't exist
+    try {
+        await fs.copy(importPath, mediaPath, {
+            overwrite: false,
+            errorOnExist: false,
+            recursive: true
+        });
+        return true;
+    }
+    catch (err) {
+        return false;
+    }
 });

@@ -4,6 +4,8 @@
 	// @ts-nocheck
 	import { onMount } from 'svelte';
 
+	export let page = "Home";
+
 	import Editor from '@tinymce/tinymce-svelte';
 	import ImageGrid from './imageGrid/+page.svelte';
 	import Title from './title/+page.svelte';
@@ -15,6 +17,7 @@
 	import VscSave from "svelte-icons-pack/vsc/VscSave";
 	import LeftArrow from "svelte-icons-pack/vsc/VscChevronLeft";
 	import RightArrow from "svelte-icons-pack/vsc/VscChevronRight";
+	import VscSettingsGear from "svelte-icons-pack/vsc/VscSettingsGear";
 
 	let titleText = "";
 	let editorText = "";
@@ -36,7 +39,7 @@
 		min_height: 500,
 		resize : 'both',
 		body_id : 'editor',
-		content_style: 'body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; line-height: 1; letter-spacing: 0.1em; }',
+		content_style: 'body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; line-height: 1.5; color: #1F2937;}',
 		placeholder : "Write your note here...",
 	};
 
@@ -60,6 +63,9 @@
 		allFiles = [];
 	}
 
+	function showSettings() {
+		
+	}
 
 	async function openMenu() {
 		// Use the window.api.showNotes to get an array of {Id: string, Title: string}
@@ -123,13 +129,57 @@
 	}
 
 	async function backup() {
+		// Send toast notification saying backing up
+		sendToast("Backing up...", "backup-toast", "info");
 		let p = await window.api.backup();
-		console.log(p);
+		// Send toast notification saying backup complete
+		if(p) {
+			sendToast("Backup complete!", "backup-toast", "success", 2000);
+		}
+		else {
+			sendToast("Backup failed!", "backup-toast", "error", 2000);
+		}
+	}
+
+	async function restore() {
+		// Send toast notification saying restoring
+		sendToast("Restoring...", "restoring-toast", "info");
+		let p = await window.api.restore();
+		// Send toast notification saying restore complete
+		if(p) {
+			sendToast("Restore complete!", "restoring-toast", "success", 2000);
+		}
+		else {
+			sendToast("Restore failed!", "restoring-toast", "error", 2000);
+		}
+	}
+
+	async function sendToast(text, className, icon = "success", duration = 10000) {
+		const Toast = Swal.mixin({
+			toast: true,
+			position: 'bottom-end',
+			showConfirmButton: false,
+			timer: duration,
+			timerProgressBar: true,
+			didOpen: (toast) => {
+				toast.addEventListener('mouseenter', Swal.stopTimer)
+				toast.addEventListener('mouseleave', Swal.resumeTimer)
+			}
+		})
+
+		Toast.fire({
+			icon: icon,
+			title: text,
+			customClass: {
+				popup: className
+			}
+		})
 	}
 
 </script>
 
-<button on:click={backup}>Backup</button>
+<!-- <button on:click={backup}>Backup</button>
+<button on:click={restore}>Restore</button> -->
 
 <!-- Create a panel that overlay the right side of the screen -->
 <div class="panel" style={showMenu}>
@@ -161,6 +211,7 @@
 	1. New
 	2. Open
 	3. Save
+	4. Settings
 
 	The buttons should be icons using the svelte-icons library
 	They shouldn't have a border or background
@@ -182,6 +233,10 @@
 
 		<button on:click={saveNote}>
 			<Icon src={VscSave} size={25} className="icon" />
+		</button>
+
+		<button on:click={() => {page = "settings"}}>
+			<Icon src={VscSettingsGear} size={25} className="icon" />
 		</button>
 
 		<!-- Display id right corner-->
