@@ -9,6 +9,7 @@
 	import Editor from '@tinymce/tinymce-svelte';
 	import ImageGrid from './imageGrid/+page.svelte';
 	import Title from './title/+page.svelte';
+	import NotesList from './notesList/+page.svelte';
 	import Icon from 'svelte-icons-pack/Icon.svelte';
 
 	import Swal from 'sweetalert2';
@@ -27,6 +28,15 @@
 	let allFiles = [];
 	let numPics = 0;
 
+	// Track unsaved changes using these variables ------------//
+	let unSavedChanges = true;
+	let prevTitle = "";
+	let prevEditor = "";
+	let prevNumPics = 0;
+	let prevPicArray = 0;
+	// --------------------------------------------------------//
+
+	
 	// set id to a 10 char random string
 	let id = Math.random().toString(36).substring(2, 12);
 
@@ -61,10 +71,8 @@
 		titleText = "";
 		editorText = "";
 		allFiles = [];
-	}
 
-	function showSettings() {
-		
+		updateChanges();
 	}
 
 	async function openMenu() {
@@ -87,6 +95,7 @@
 		numPics = allFiles.length;
 		console.log(allFiles);
 
+		updateChanges();
 	}
 
 	// Write to file
@@ -99,6 +108,7 @@
 		let p = await window.api.saveDir(id, data);
 		console.log(p);
 
+		updateChanges();
 	}
 
 	async function nextNote() {
@@ -128,70 +138,19 @@
 		}
 	}
 
-	async function backup() {
-		// Send toast notification saying backing up
-		sendToast("Backing up...", "backup-toast", "info");
-		let p = await window.api.backup();
-		// Send toast notification saying backup complete
-		if(p) {
-			sendToast("Backup complete!", "backup-toast", "success", 2000);
-		}
-		else {
-			sendToast("Backup failed!", "backup-toast", "error", 2000);
-		}
+	function updateChanges() {
+		prevTitle = titleText;
+		prevEditor = editorText;
+		prevPicArray = allFiles.length;
+		prevNumPics = numPics;
 	}
 
-	async function restore() {
-		// Send toast notification saying restoring
-		sendToast("Restoring...", "restoring-toast", "info");
-		let p = await window.api.restore();
-		// Send toast notification saying restore complete
-		if(p) {
-			sendToast("Restore complete!", "restoring-toast", "success", 2000);
-		}
-		else {
-			sendToast("Restore failed!", "restoring-toast", "error", 2000);
-		}
-	}
-
-	async function sendToast(text, className, icon = "success", duration = 10000) {
-		const Toast = Swal.mixin({
-			toast: true,
-			position: 'bottom-end',
-			showConfirmButton: false,
-			timer: duration,
-			timerProgressBar: true,
-			didOpen: (toast) => {
-				toast.addEventListener('mouseenter', Swal.stopTimer)
-				toast.addEventListener('mouseleave', Swal.resumeTimer)
-			}
-		})
-
-		Toast.fire({
-			icon: icon,
-			title: text,
-			customClass: {
-				popup: className
-			}
-		})
-	}
-
+	$: unSavedChanges = (prevTitle != titleText || prevEditor != editorText || prevNumPics != numPics || prevPicArray != allFiles.length);
 </script>
 
-<!-- <button on:click={backup}>Backup</button>
-<button on:click={restore}>Restore</button> -->
-
-<!-- Create a panel that overlay the right side of the screen -->
+<!-- Create a panel that overlays the screen when openNotes button is clicked -->
 <div class="panel" style={showMenu}>
-	<!-- Close button in the top right of the panel-->
-	<button style="position: absolute; top: 0; right: 0; background: none; border: none font-size: 1.5em; cursor: pointer;" on:click={() => {showMenu = "display: None"}}>X</button>
-
-	{#each notes as note}
-		<button class="note-menu-option" on:click={() => {openNote(note.id)}}>
-			{note.title}
-		</button>
-	{/each}
-
+	<NotesList notes={notes} openNote={openNote} bind:showMenu/>	
 </div>
 
 <!-- Arrow 1 will be placed to the left edge of the page in the center. It will be used to go to the previous note -->
@@ -204,6 +163,14 @@
 	<Icon src={RightArrow} size={25} className="icon"/>
 </button>
 
+<!-- Unsaved changes notification in the bottom right-->
+<div class="saved-changes {unSavedChanges ? ' unsaved' : ' saved'}">
+	{#if unSavedChanges}
+		Unsaved Changes
+	{:else}
+		All Changes Saved
+	{/if}
+</div>
 
 <!--
 	Make a flex box. On the left there will the title component.
@@ -211,7 +178,8 @@
 	1. New
 	2. Open
 	3. Save
-	4. Settings
+	4. Delete
+	5. Settings
 
 	The buttons should be icons using the svelte-icons library
 	They shouldn't have a border or background
@@ -231,7 +199,7 @@
 			<Icon src={VscOpenPreview} size={25} className="icon" />
 		</button>
 
-		<button on:click={saveNote}>
+		<button on:click={saveNote} class="{(unSavedChanges) ? "unsaved" : ""}">
 			<Icon src={VscSave} size={25} className="icon" />
 		</button>
 
@@ -260,7 +228,7 @@
 <style>
 	:global(body) {
 		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-		letter-spacing: 0.1em;
+		letter-spacing: 0.075rem;
 		font-size : 20px;
 	}
 
@@ -336,24 +304,31 @@
 		position: absolute;
 		right: 0;
 		top: 0;
-		height: 100%;
-		width: 25%;
-		background: lightcyan;
+		left: 0;
+		bottom: 0;
+		background: rgba(255, 255, 255, 0.5);
 		z-index: 2;
 	}
 
-	.note-menu-option {
-		display : block;
-		background: white;
-		border-radius: 1em;
-		border: none;
-		width: 100%;
-		cursor: pointer;
-	}
 
 	#id-div {
 		/* Flash when text changes */
 		animation: flash 1s;
 	}
 
+	.saved-changes {
+		position: fixed;
+		bottom: 1rem;
+		right: 0;
+		margin: 10px;
+		font-size: 10px;
+	}
+
+	.saved {
+		color: #6c63ff;
+	}
+
+	.unsaved :global(.icon), .unsaved {
+		color: palevioletred;
+	}
 </style>

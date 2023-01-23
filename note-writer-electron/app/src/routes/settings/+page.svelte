@@ -1,6 +1,7 @@
 <script>
     export let page = "settings";
 
+    import Swal from 'sweetalert2';
     async function backup() {
 		// Send toast notification saying backing up
 		sendToast("Backing up...", "backup-toast", "info");

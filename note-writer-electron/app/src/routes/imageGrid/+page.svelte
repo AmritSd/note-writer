@@ -22,7 +22,7 @@
     $: if(files !== []) {
         filesWithId = Array.from(files).map((file) => {
             return {
-                path: file,
+                path: "media://" + file,
                 id: numPics++,
                 size: 18
             }

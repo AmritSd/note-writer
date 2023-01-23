@@ -1,11 +1,18 @@
 // Modules to control application life and create native browser window
 const { app, BrowserWindow, dialog , ipcMain} = require('electron');
 const path = require('path');
+const { protocol } = require('electron');
 const fs = require('fs-extra');
 const serve = require('electron-serve');
 const loadURL = serve({ directory: 'public' });
 
-const finalDir = 'src/media';
+const finalDir = path.join(app.getPath('appData'), 'media');
+if (!fs.existsSync(finalDir)) {
+    fs.mkdirSync(finalDir);
+}
+
+
+console.log(finalDir);
 
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -17,6 +24,19 @@ function isDev() {
 }
 
 function createWindow() {    
+
+    protocol.registerFileProtocol("media", (request, callback) => {
+        const url = request.url.replace(`media://`, '')
+        try {
+          // Return toy image from public dir
+            return callback(path.join(finalDir, url))
+        }
+        catch (error) {
+          // Handle the error as needed
+          console.error(error)
+        }
+    })
+
     // Create the browser window.
     mainWindow = new BrowserWindow({
         width: 800,
@@ -24,9 +44,9 @@ function createWindow() {
         webPreferences: {
             nodeIntegration: true,
             preload: path.join(__dirname, 'preload.js'),
-            // enableRemoteModule: true,
-            // contextIsolation: false
-            webSecurity: false
+            enableRemoteModule: true,
+            contextIsolation: true,
+            webSecurity: true
         },
         icon: path.join(__dirname, 'public/favicon.png'),
         show: false
@@ -103,7 +123,7 @@ ipcMain.handle("open-file", async (event, arg) => {
     let destinationPaths = [];
     for (const filePath of result.filePaths) {
         const fileName = path.basename(filePath);
-        let mediaPath = path.join(__dirname, finalDir);
+        let mediaPath = finalDir
         mediaPath = path.join(mediaPath, arg);
 
         const destinationPath = path.join(mediaPath, fileName);
@@ -113,7 +133,7 @@ ipcMain.handle("open-file", async (event, arg) => {
         }
 
         fs.copyFileSync(filePath, destinationPath);
-        destinationPaths.push(destinationPath);
+        destinationPaths.push(path.join(arg, fileName));
     }
     return destinationPaths;
 });
@@ -121,7 +141,7 @@ ipcMain.handle("open-file", async (event, arg) => {
 // Function will show the notes available in the media folder
 // This can be done by reading the notes.json file in the media folder
 ipcMain.handle("show-notes", async (event, arg) => {
-    const mediaPath = path.join(__dirname, finalDir);
+    const mediaPath = finalDir
     const notesPath = path.join(mediaPath, 'notes.json');
 
     if (!fs.existsSync(notesPath)) {
@@ -135,7 +155,7 @@ ipcMain.handle("show-notes", async (event, arg) => {
 // Function will open a dir with the media folder with given id
 // It read the messages.json file within the folder and return the content
 ipcMain.handle("open-dir", async (event, arg) => {
-    const mediaPath = path.join(__dirname, finalDir);
+    const mediaPath = finalDir
     const dirPath = path.join(mediaPath, arg);
     const messagesPath = path.join(dirPath, 'messages.json');
 
@@ -152,20 +172,23 @@ ipcMain.handle("open-dir", async (event, arg) => {
 // It will then create a messages.json file within the folder if it doesn't exist, and then write contents to the file
 // Upload the notes.json file in the media folder. Add the note id and title to array
 ipcMain.handle("save-dir", async (event, arg) => {
-    const mediaPath = path.join(__dirname, finalDir);
+    const mediaPath = finalDir
 
     const notesPath = path.join(mediaPath, 'notes.json');
 
     if (!fs.existsSync(notesPath)) {
+        // Creat
         fs.writeFileSync(notesPath, JSON.stringify([]));
     }
 
     const notes = fs.readFileSync(notesPath, 'utf-8');
     const notesArray = JSON.parse(notes);
     
+
     // If the note id is not in the array, add it else update the title
     if (!notesArray.some(note => note.id === arg.id)) {
-        notesArray.push({ id: arg.id, title: arg.messages.title });
+        let todaysDate = new Date();
+        notesArray.push({ id: arg.id, title: arg.messages.title, date: todaysDate.toLocaleDateString()});
     } else {
         notesArray.forEach(note => {
             if (note.id === arg.id) {
@@ -188,7 +211,7 @@ ipcMain.handle("save-dir", async (event, arg) => {
 
 // Delete file from subfolder in mdia folder with given id
 ipcMain.handle("delete-file", async (event, arg) => {
-    const mediaPath = path.join(__dirname, finalDir);
+    const mediaPath = finalDir
     const dirPath = path.join(mediaPath, arg.id);
     const filePath = path.join(dirPath, arg.file);
 
@@ -199,7 +222,7 @@ ipcMain.handle("delete-file", async (event, arg) => {
 
 // Delete folder from media folder with given id
 ipcMain.handle("delete-dir", async (event, arg) => {
-    const mediaPath = path.join(__dirname, finalDir);
+    const mediaPath = finalDir
     const dirPath = path.join(mediaPath, arg);
 
     if (fs.existsSync(dirPath)) {
@@ -220,7 +243,7 @@ ipcMain.handle("backup", async (event, arg) => {
         return false;
     }
 
-    const mediaPath = path.join(__dirname, finalDir);
+    const mediaPath = finalDir
     const backupPath = path.join(result.filePaths[0], 'media');
 
     if (!fs.existsSync(backupPath)) {
@@ -250,7 +273,7 @@ ipcMain.handle("restore", async (event, arg) => {
         return false;
     }
 
-    const mediaPath = path.join(__dirname, finalDir);
+    const mediaPath = finalDir
     const importPath = result.filePaths[0];
 
     if (!fs.existsSync(importPath)) {

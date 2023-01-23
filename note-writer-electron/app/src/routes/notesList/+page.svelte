@@ -1,24 +1,24 @@
 <script>
-    export let page = "notesList";
-
     export let notes = [];
-
+    export let openNote = () => {};
+    export let showMenu = "";
 </script>
 
 
 <div class="centered-container">
-    <button on:click={() => {page = "Home"}} class="back-button">&lt;Back</button>
+    <button on:click={() => {showMenu = "display: None;"}} class="back-button">&lt;Back</button>
     <h2>Notes</h2>
+    {#if notes.length === 0}
+        <p>No notes found</p>
+    {/if}
     <table>
-        <tr>
-            <td>Backup notes</td>
-            <td><button on:click={backup}></button></td>
-        </tr>
-
-        <tr>
-            <td>Restore notes</td>
-            <td><button on:click={restore}>Restore</button></td>
-        </tr>
+        {#each notes as note}
+            <tr>
+                <td>{note.title}</td>
+                <td class="date">{note.date !== undefined ? note.date : ""}</td>
+                <td><button on:click={() => {openNote(note.id); showMenu = "display: None;"}}>Open</button></td>
+            </tr>
+        {/each}
     </table>
 
 </div>
@@ -51,6 +51,8 @@
     max-width: 800px;
     margin: 0 auto;
     padding: 0 1rem;
+    background-color: snow;
+    min-height: 100%;
 }
 
 table {
@@ -89,5 +91,10 @@ button {
 
 button:hover, button:active {
     background-color: #6c63ff;
+}
+
+.date {
+    color: grey;
+    font-size: 0.8rem;
 }
 </style>

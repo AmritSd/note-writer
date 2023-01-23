@@ -13,7 +13,7 @@
         font-size: 30px;
         font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         border: none;
-        letter-spacing: 0.12em;
+        letter-spacing: 0.075em;
         outline: none;
     }
 </style>
