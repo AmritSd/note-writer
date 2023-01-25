@@ -19,11 +19,13 @@
 	import LeftArrow from "svelte-icons-pack/vsc/VscChevronLeft";
 	import RightArrow from "svelte-icons-pack/vsc/VscChevronRight";
 	import VscSettingsGear from "svelte-icons-pack/vsc/VscSettingsGear";
+	import VscTrash from "svelte-icons-pack/vsc/VscTrash";
 
 	let titleText = "";
 	let editorText = "";
 	let gridStyle = "flex: 1;";
 	let showMenu = "display : none;";
+	let deleteConfirm = false;
 	let notes = [];
 	let allFiles = [];
 	let numPics = 0;
@@ -32,8 +34,7 @@
 	let unSavedChanges = true;
 	let prevTitle = "";
 	let prevEditor = "";
-	let prevNumPics = 0;
-	let prevPicArray = 0;
+	let prevMedia = JSON.stringify(allFiles);
 	// --------------------------------------------------------//
 
 	
@@ -69,7 +70,7 @@
 	function newNote() {
 		id = Math.random().toString(36).substring(2, 12);
 		titleText = "";
-		editorText = "";
+		editorText = " ";
 		allFiles = [];
 
 		updateChanges();
@@ -141,17 +142,34 @@
 	function updateChanges() {
 		prevTitle = titleText;
 		prevEditor = editorText;
-		prevPicArray = allFiles.length;
-		prevNumPics = numPics;
+		prevMedia = JSON.stringify(allFiles);
 	}
 
-	$: unSavedChanges = (prevTitle != titleText || prevEditor != editorText || prevNumPics != numPics || prevPicArray != allFiles.length);
+	function deleteNote() {
+		window.api.deleteDir(id);
+		prevNote();
+	}
+
+	$: unSavedChanges = (prevTitle != titleText || prevEditor != editorText || prevMedia != JSON.stringify(allFiles));
 </script>
 
 <!-- Create a panel that overlays the screen when openNotes button is clicked -->
 <div class="panel" style={showMenu}>
 	<NotesList notes={notes} openNote={openNote} bind:showMenu/>	
 </div>
+
+{#if deleteConfirm}
+	<div class="panel">
+		<div class="delete-confirmation-background">
+			<h3>Are you sure you want to delete this note?</h3>
+			<div class="buttons">
+				<button on:click={() => deleteConfirm = false}>Cancel</button>
+				<button on:click={() => {deleteNote(); deleteConfirm = false;}}>Delete</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
 
 <!-- Arrow 1 will be placed to the left edge of the page in the center. It will be used to go to the previous note -->
 <button class="left-arrow" on:click={prevNote}>
@@ -203,6 +221,10 @@
 			<Icon src={VscSave} size={25} className="icon" />
 		</button>
 
+		<button on:click={() => deleteConfirm = true}>
+			<Icon src={VscTrash} size={25} className="icon" />
+		</button>
+
 		<button on:click={() => {page = "settings"}}>
 			<Icon src={VscSettingsGear} size={25} className="icon" />
 		</button>
@@ -221,7 +243,7 @@
 
 	<!-- Right side div -->
 	<div class="flex-2">
-		<Editor bind:value={editorText}  id="editor" {conf}/>
+		<Editor bind:value={editorText}  id="editor" scriptSrc="tinymce.min.js" {conf}/>
 	</div>
 </div>
 
@@ -301,7 +323,7 @@
 	}
 
 	.panel {
-		position: absolute;
+		position: fixed;
 		right: 0;
 		top: 0;
 		left: 0;
@@ -330,5 +352,26 @@
 
 	.unsaved :global(.icon), .unsaved {
 		color: palevioletred;
+	}
+
+	.delete-confirmation-background {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		width: min(25rem, 100%);
+		background-color: snow;
+		transform: translate(-50%, -50%);
+		padding: 2rem;
+		padding-top: 1rem;
+	}
+
+	.delete-confirmation-background button {
+		border: none;
+		cursor: pointer;
+	}
+
+	.delete-confirmation-background button:hover {
+		color: white;
+		background-color: #6c63ff;
 	}
 </style>

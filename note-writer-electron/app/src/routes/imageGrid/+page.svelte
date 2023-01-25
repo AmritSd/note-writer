@@ -23,7 +23,7 @@
         filesWithId = Array.from(files).map((file) => {
             return {
                 path: "media://" + file,
-                id: numPics++,
+                id: ++numPics,
                 size: 18
             }
         });

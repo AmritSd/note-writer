@@ -1,5 +1,5 @@
 // Modules to control application life and create native browser window
-const { app, BrowserWindow, dialog , ipcMain} = require('electron');
+const { app, BrowserWindow, dialog , ipcMain, Menu} = require('electron');
 const path = require('path');
 const { protocol } = require('electron');
 const fs = require('fs-extra');
@@ -12,8 +12,7 @@ if (!fs.existsSync(finalDir)) {
 }
 
 
-console.log(finalDir);
-
+// Menu.setApplicationMenu(null);
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -39,8 +38,6 @@ function createWindow() {
 
     // Create the browser window.
     mainWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
         webPreferences: {
             nodeIntegration: true,
             preload: path.join(__dirname, 'preload.js'),
@@ -52,6 +49,7 @@ function createWindow() {
         show: false
     });
 
+    mainWindow.maximize();
     // This block of code is intended for development purpose only.
     // Delete this entire block of code when you are ready to package the application.
     if (isDev()) {
@@ -132,8 +130,15 @@ ipcMain.handle("open-file", async (event, arg) => {
             fs.mkdirSync(mediaPath);
         }
 
-        fs.copyFileSync(filePath, destinationPath);
-        destinationPaths.push(path.join(arg, fileName));
+        // If filename already exists at destination skip copying
+        try {
+            if(!fs.existsSync(destinationPath)) {   
+                fs.copyFileSync(filePath, destinationPath);
+                destinationPaths.push(path.join(arg, fileName));
+            }
+        } catch (err) {
+            console.error(err);
+        }
     }
     return destinationPaths;
 });
@@ -206,6 +211,27 @@ ipcMain.handle("save-dir", async (event, arg) => {
         fs.mkdirSync(dirPath);
     }
 
+    // Get existing files in the folder
+    let filePaths = fs.readdirSync(dirPath);
+    let fileNames = [];
+
+    filePaths.forEach(filePath => {
+        fileNames.push(path.basename(filePath));
+    });
+
+    // Get files to keep 
+    let filesToKeep = [];
+    arg.messages.images.forEach(file => {
+        filesToKeep.push(path.basename(file.path));
+    });
+
+    // Delete files that are not in the filesToKeep array
+    fileNames.forEach(fileName => {
+        if (!filesToKeep.includes(fileName)) {
+            fs.unlinkSync(path.join(dirPath, fileName));
+        }
+    });
+
     fs.writeFileSync(messagesPath, JSON.stringify(arg.messages));
 });
 
@@ -226,8 +252,20 @@ ipcMain.handle("delete-dir", async (event, arg) => {
     const dirPath = path.join(mediaPath, arg);
 
     if (fs.existsSync(dirPath)) {
-        fs.rmdirSync(dirPath, { recursive: true });
+        fs.rm(dirPath, { recursive: true });
     }
+
+    // Remove note form notes.json file
+    const notesPath = path.join(mediaPath, 'notes.json');
+
+    if (!fs.existsSync(notesPath)) {
+        return;
+    }
+
+    const notes = fs.readFileSync(notesPath, 'utf-8');
+    const notesArray = JSON.parse(notes);
+    const filteredNotes = notesArray.filter(note => note.id !== arg);
+    fs.writeFileSync(notesPath, JSON.stringify(filteredNotes));
 });
 
 

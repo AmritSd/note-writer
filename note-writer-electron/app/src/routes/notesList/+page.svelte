@@ -2,6 +2,21 @@
     export let notes = [];
     export let openNote = () => {};
     export let showMenu = "";
+
+    let selectedNotes = [];
+    let selectAll = false;
+
+    function handleSelection(id) {
+        // If id in selectedNotes, remove it
+        // Else, add it
+        if(selectedNotes.includes(id)) {
+            selectedNotes = selectedNotes.filter((noteId) => noteId != id);
+        } else {
+            selectedNotes.push(id);
+        }
+
+        console.log("Returin")
+    }
 </script>
 
 
@@ -12,19 +27,27 @@
         <p>No notes found</p>
     {/if}
     <table>
-        {#each notes as note}
-            <tr>
+        {#each notes as note (note.id)}
+            <tr class="note-row" on:click={() => handleSelection(note.id)}>
                 <td>{note.title}</td>
                 <td class="date">{note.date !== undefined ? note.date : ""}</td>
                 <td><button on:click={() => {openNote(note.id); showMenu = "display: None;"}}>Open</button></td>
             </tr>
         {/each}
     </table>
-
 </div>
 
 
 <style>
+/* Let's make the tr rows selectable */
+.note-row {
+    cursor: pointer;
+}
+
+.note-row:hover {
+    background-color: #e6e6e6;
+}
+
 .back-button {
     /* Add some basic styling */
     color: grey;
@@ -79,6 +102,11 @@ td:first-child {
 /* color even table rows grey */
 tr:nth-child(even) {
     background-color: #f2f2f2;
+}
+
+tr.selected {
+    background-color: #6c63ff;
+    color: white;
 }
 button {
     margin: 0.5rem;
