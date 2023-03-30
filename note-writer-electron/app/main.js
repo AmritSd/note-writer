@@ -12,7 +12,7 @@ if (!fs.existsSync(finalDir)) {
 }
 
 
-// Menu.setApplicationMenu(null);
+
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -20,6 +20,10 @@ let mainWindow;
 
 function isDev() {
     return !app.isPackaged;
+}
+
+if(!isDev()) {
+    Menu.setApplicationMenu(null);
 }
 
 function createWindow() {    

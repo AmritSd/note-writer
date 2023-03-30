@@ -21,9 +21,12 @@
 
     $: if(files !== []) {
         filesWithId = Array.from(files).map((file) => {
+            numPics++;
+            // Generate random number
+            let rand = Math.floor(Math.random() * 1000000000);
             return {
                 path: "media://" + file,
-                id: ++numPics,
+                id: rand,
                 size: 18
             }
         });

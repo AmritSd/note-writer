@@ -3,7 +3,8 @@
     import Home from './routes/+page.svelte';
     import Settings from './routes/settings/+page.svelte';
     import Draggable from './routes/draggable/+page.svelte';
-    let page = "Home";
+    import DraggableCanvas from './routes/draggableCanvas/+page.svelte';
+    let page = "draggableCanvas";
 
     $: console.log(page);
 </script>
@@ -15,6 +16,8 @@
         <Settings bind:page/>
     {:else if page === "draggable"}
         <Draggable bind:page/>
+    {:else if page === "draggableCanvas"}
+        <DraggableCanvas bind:page/>
     {/if}
 </main>
 
