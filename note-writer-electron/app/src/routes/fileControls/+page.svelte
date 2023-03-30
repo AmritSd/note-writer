@@ -18,6 +18,10 @@ const openFile = async () => {
   return handle;
 };
 
+const ipcOpen = async () => {
+  const path = await window.api.openFile();
+  console.log(path);
+};
 
 
 const textFromFile = async (file) => {
@@ -77,7 +81,7 @@ const saveExistingFile = async (fileHandle, text) => {
 
 Add buttons to open a file and save a File
 {text}
-<button on:click={ipcOpen}>Open File 2 </button>
+<button on:click={ipcOpen}>Open File 2</button>
 <button on:click={() => {openFile()}}>Open File</button>
 <button on:click={() => {saveFile("Holy shite")}}>Save File</button>
 <!-- Update file button -->
